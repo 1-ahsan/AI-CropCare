@@ -34,16 +34,39 @@
     .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 15px; transition: 0.3s; }
     .btn:hover { opacity: 0.9; transform: translateY(-2px); }
 
+    /* Visual Soil Selector */
+    .soil-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
+    .soil-card { cursor: pointer; border: 3px solid transparent; border-radius: 8px; overflow: hidden; transition: 0.2s; text-align: center; padding-bottom: 5px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .soil-card img { width: 100%; height: 80px; object-fit: cover; margin-bottom: 5px; }
+    .soil-card.selected { border-color: #4caf50; transform: scale(1.02); box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+    .soil-label { font-size: 12px; font-weight: 600; display: block; }
+
+    /* Color Coded Timeline */
     .timeline { margin-top: 20px; display: none; }
-    .stage { border-left: 3px solid var(--accent); padding-left: 20px; margin-bottom: 20px; position: relative; }
+    .stage { border-left: 3px solid var(--accent); padding-left: 20px; margin-bottom: 20px; position: relative; transition: 0.3s; }
     .stage::before { content: ''; position: absolute; left: -8px; top: 0; width: 13px; height: 13px; background: var(--accent); border-radius: 50%; }
     .stage h4 { color: var(--primary); margin-bottom: 5px; }
+    
+    .stage-water { border-left-color: #2196f3 !important; background: #e3f2fd; padding: 10px 10px 10px 20px; border-radius: 0 8px 8px 0; }
+    .stage-water::before { background: #2196f3 !important; }
+    .stage-water h4 { color: #0d47a1 !important; }
+    
+    .stage-growth { border-left-color: #4caf50 !important; background: #e8f5e9; padding: 10px 10px 10px 20px; border-radius: 0 8px 8px 0; }
+    .stage-growth::before { background: #4caf50 !important; }
+    .stage-growth h4 { color: #1b5e20 !important; }
 
     #preview-container { text-align: center; margin: 15px 0; display: none; }
     #image-preview { max-width: 100%; max-height: 300px; border-radius: 12px; border: 2px solid #eee; }
     .severity { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
     .severity-moderate { background: #fff3e0; color: #ef6c00; }
-    .severity-high { background: #ffebee; color: #c62828; }
+    
+    /* Flashing High Severity Alert */
+    @keyframes flashRed {
+      0% { background-color: #ffebee; box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7); }
+      70% { background-color: #ffcdd2; box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+      100% { background-color: #ffebee; box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+    }
+    .severity-high { background: #ffebee; color: #c62828; animation: flashRed 1s infinite; border: 1px solid #c62828; }
 
     #chat-window { height: 250px; overflow-y: auto; background: #fafafa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; }
     .msg { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; }
@@ -87,14 +110,27 @@
           <label id="lbl-loc">Location</label>
           <input type="text" id="location" value="Punjab, Pakistan">
         </div>
-        <div class="field">
+        
+        <!-- VISUAL SOIL SELECTOR -->
+        <div class="field" style="grid-column: span 2;">
           <label id="lbl-soil">Soil Type</label>
-          <select id="soil">
-            <option value="Loamy">Loamy / میرا مٹی</option>
-            <option value="Clay">Clay / چکنی مٹی</option>
-            <option value="Sandy">Sandy / ریتلی مٹی</option>
-          </select>
+          <input type="hidden" id="soil" value="Loamy">
+          <div class="soil-grid">
+            <div class="soil-card selected" onclick="selectSoil('Loamy', this)">
+              <img src="https://placehold.co/150x100/3e2723/ffffff?text=Dark+Crumbly" alt="Loamy">
+              <span class="soil-label" data-en="Loamy" data-ur="میرا مٹی">Loamy / میرا مٹی</span>
+            </div>
+            <div class="soil-card" onclick="selectSoil('Clay', this)">
+              <img src="https://placehold.co/150x100/5d4037/ffffff?text=Cracked+Mud" alt="Clay">
+              <span class="soil-label" data-en="Clay" data-ur="چکنی مٹی">Clay / چکنی مٹی</span>
+            </div>
+            <div class="soil-card" onclick="selectSoil('Sandy', this)">
+              <img src="https://placehold.co/150x100/d7ccc8/000000?text=Sandy+Grains" alt="Sandy">
+              <span class="soil-label" data-en="Sandy" data-ur="ریتلی مٹی">Sandy / ریتلی مٹی</span>
+            </div>
+          </div>
         </div>
+
         <div class="field">
           <label id="lbl-irr">Irrigation</label>
           <select id="irrigation">
@@ -103,7 +139,7 @@
             <option value="Sprinkler">Sprinkler / فوارہ</option>
           </select>
         </div>
-        <div class="field" style="grid-column: span 2;">
+        <div class="field">
           <label id="lbl-date">Planting Date</label>
           <input type="date" id="plant-date" value="2024-10-25">
         </div>
@@ -155,6 +191,12 @@
   <script>
     const API_BASE = "http://localhost:3000/api";
     let currentLang = 'en';
+
+    function selectSoil(value, element) {
+      document.getElementById('soil').value = value;
+      document.querySelectorAll('.soil-card').forEach(card => card.classList.remove('selected'));
+      element.classList.add('selected');
+    }
 
     const translations = {
       en: {
@@ -217,6 +259,12 @@
       document.getElementById('lbl-crop').innerText = t.crop;
       document.getElementById('lbl-loc').innerText = t.loc;
       document.getElementById('lbl-soil').innerText = t.soil;
+      
+      // Update visual soil labels
+      document.querySelectorAll('.soil-label').forEach(label => {
+        label.innerText = currentLang === 'en' ? label.getAttribute('data-en') : label.getAttribute('data-ur');
+      });
+
       document.getElementById('lbl-irr').innerText = t.irr;
       document.getElementById('lbl-date').innerText = t.date;
       document.getElementById('btn-plan').innerText = t.btnPlan;
@@ -287,15 +335,13 @@
       }
     }
 
-    // Improved TTS configuration for native dialects
     function speakText(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = currentLang === 'ur' ? 'ur-PK' : 'en-US';
-        utterance.rate = 0.9; // Slightly slower for clear regional pronunciation
+        utterance.rate = 0.9; 
         
-        // Attempt to find a specific regional voice if available in the OS
         const voices = window.speechSynthesis.getVoices();
         const targetVoice = voices.find(v => v.lang === utterance.lang);
         if (targetVoice) utterance.voice = targetVoice;
@@ -310,7 +356,6 @@
       speakText(`${summary}. ${precautions}`);
     }
 
-    // Load voices actively (fixes Chrome bug where voices aren't immediately ready)
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
@@ -340,15 +385,26 @@
         });
         const stages = await res.json();
         
-        timeline.innerHTML = stages.map(s => `
-          <div class="stage">
+        timeline.innerHTML = stages.map(s => {
+          let stageClass = '';
+          const lowerText = (s.title + ' ' + s.desc).toLowerCase();
+          
+          // Color-Coding Logic
+          if (lowerText.includes('water') || lowerText.includes('irrigation') || lowerText.includes('drip') || lowerText.includes('پانی') || lowerText.includes('آبپاشی')) {
+            stageClass = 'stage-water';
+          } else if (lowerText.includes('growth') || lowerText.includes('fertilizer') || lowerText.includes('نشوونما') || lowerText.includes('کھاد')) {
+            stageClass = 'stage-growth';
+          }
+
+          return `
+          <div class="stage ${stageClass}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h4>${s.title}</h4>
               <button onclick="speakText('${s.title.replace(/'/g, "\\'")}. ${s.desc.replace(/'/g, "\\'")}')" style="font-size: 11px; cursor: pointer; background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px;">🔊 Listen</button>
             </div>
             <p style="font-size: 14px; color: #555;">${s.desc}</p>
           </div>
-        `).join('');
+        `}).join('');
         
         timeline.style.display = 'block';
       } catch (err) {
@@ -390,6 +446,8 @@
         
         document.getElementById('diagnosis-summary').innerText = data.summary;
         document.getElementById('severity-badge').innerText = data.severity;
+        
+        // Severity Logic
         document.getElementById('severity-badge').className = `severity severity-${data.severity.toLowerCase()}`;
         document.getElementById('precautions-list').innerHTML = data.precautions.map(p => `<li>${p}</li>`).join('');
         
