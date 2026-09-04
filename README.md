@@ -4,7 +4,7 @@ An AI-powered agricultural platform designed to help farmers and growers in Paki
 
 🔗 Project Links
 
-Live Deployment: [ai-cropcare-production.up.railway.app]  might have some issues in live due to Gemini keys free version.
+Live Deployment: [https://ai-cropcare-production.up.railway.app/]  might have some issues in live due to Gemini keys free version.
 
 Demo Video: [https://drive.google.com/file/d/1a6z6Zw_q5P6fFsbhDRGrPMCzh3GGH61k/view?usp=sharing]
 
