@@ -17,7 +17,6 @@
     body { background-color: var(--bg); color: var(--text); padding: 20px; }
     .container { max-width: 900px; margin: 0 auto; }
     
-    /* Header */
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .logo h1 { font-size: 28px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
     .header-actions { display: flex; align-items: center; gap: 15px; }
@@ -27,7 +26,6 @@
     .card { background: var(--card); border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: var(--shadow); }
     h3 { margin-bottom: 20px; font-size: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; color: var(--primary); }
 
-    /* Module 1: Form */
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
     .field { display: flex; flex-direction: column; gap: 5px; }
     label { font-size: 13px; font-weight: 600; }
@@ -36,26 +34,27 @@
     .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 15px; transition: 0.3s; }
     .btn:hover { opacity: 0.9; transform: translateY(-2px); }
 
-    /* Timeline */
     .timeline { margin-top: 20px; display: none; }
     .stage { border-left: 3px solid var(--accent); padding-left: 20px; margin-bottom: 20px; position: relative; }
     .stage::before { content: ''; position: absolute; left: -8px; top: 0; width: 13px; height: 13px; background: var(--accent); border-radius: 50%; }
     .stage h4 { color: var(--primary); margin-bottom: 5px; }
 
-    /* Module 2: Doctor */
     #preview-container { text-align: center; margin: 15px 0; display: none; }
     #image-preview { max-width: 100%; max-height: 300px; border-radius: 12px; border: 2px solid #eee; }
     .severity { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
     .severity-moderate { background: #fff3e0; color: #ef6c00; }
     .severity-high { background: #ffebee; color: #c62828; }
 
-    /* Module 3: Chat */
     #chat-window { height: 250px; overflow-y: auto; background: #fafafa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; }
     .msg { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; }
     .msg.bot { background: #e8f5e9; align-self: flex-start; border-bottom-left-radius: 2px; }
     .msg.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
 
     .loader { display: none; text-align: center; padding: 10px; font-style: italic; font-size: 13px; }
+    
+    /* Mic Pulse Animation */
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(244, 67, 54, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); } }
+    .recording { background: #f44336 !important; animation: pulse 1.5s infinite; transform: scale(1.1); }
   </style>
 </head>
 <body>
@@ -72,7 +71,6 @@
       </div>
     </header>
 
-    <!-- Module 1: Personalized Care Plan -->
     <div class="card">
       <h3 id="txt-mod1-title">📅 Smart Farming Care Plan</h3>
       <div class="grid">
@@ -115,7 +113,6 @@
       <div id="timeline" class="timeline"></div>
     </div>
 
-    <!-- Module 2: AI Crop Doctor -->
     <div class="card">
       <h3 id="txt-mod2-title">🩺 AI Crop Doctor (Diagnostic Scanner)</h3>
       <p id="txt-mod2-desc" style="font-size: 13px; color: #666; margin-bottom: 15px;">Upload a photo of your leaf or plant to detect diseases.</p>
@@ -127,21 +124,29 @@
       <div id="diag-loader" class="loader">Analyzing image markers...</div>
       
       <div id="diagnosis-results" style="display: none; margin-top: 20px;">
-        <div id="severity-badge" class="severity severity-moderate">Moderate Severity</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div id="severity-badge" class="severity severity-moderate">Moderate Severity</div>
+          <button onclick="readDiagnosis()" style="font-size: 12px; cursor: pointer; background: #fff; border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; padding: 4px 10px; font-weight: 600;">🔊 Read Aloud</button>
+        </div>
         <div id="diagnosis-summary" style="margin-bottom: 15px; font-size: 14px; line-height: 1.6;"></div>
         <ul id="precautions-list" style="padding-left: 20px; font-size: 14px;"></ul>
       </div>
     </div>
 
-    <!-- Module 3: Multilingual Assistant -->
     <div class="card">
       <h3 id="txt-mod3-title">💬 Farmer Chat Assistant</h3>
       <p id="txt-mod3-desc" style="font-size: 13px; color: #666; margin-bottom: 10px;">Ask in Urdu, Punjabi, or English (e.g., "Kapas ki bimari?")</p>
       <div id="chat-window">
         <div class="msg bot" id="chat-welcome">Assalam-o-Alaikum! I am your AI Agronomist. How can I help you?</div>
       </div>
-      <div style="display: flex; gap: 10px;">
-        <input type="text" id="chat-input" placeholder="Type message..." style="flex: 1;">
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="chat-input" placeholder="Type message..." style="flex: 1;" onkeypress="if(event.key === 'Enter') sendChat()">
+        <button id="btn-mic" 
+                style="background: #4caf50; color: white; border: none; width: 60px; height: 60px; border-radius: 50%; cursor: pointer; font-size: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.2s;"
+                onclick="toggleVoiceRecognition()">
+          🎤
+        </button>
         <button class="btn" id="btn-chat" style="width: 80px; margin: 0;" onclick="sendChat()">Send</button>
       </div>
     </div>
@@ -227,6 +232,89 @@
       document.getElementById('chat-input').placeholder = t.chatPlaceholder;
     }
 
+    // --- Voice Interaction (Mic & Text-to-Speech) ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let isListening = false;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ur-PK'; 
+      recognition.interimResults = false;
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('chat-input').value = transcript;
+        stopVoiceRecognition(); // Auto-stop when speech finishes
+        sendChat();
+      };
+      
+      recognition.onerror = () => stopVoiceRecognition();
+      recognition.onend = () => stopVoiceRecognition();
+    }
+
+    function toggleVoiceRecognition() {
+      if (isListening) {
+        stopVoiceRecognition();
+      } else {
+        startVoiceRecognition();
+      }
+    }
+
+    function startVoiceRecognition() {
+      if (recognition) {
+        try { 
+          recognition.start(); 
+          isListening = true;
+          const micBtn = document.getElementById('btn-mic');
+          micBtn.classList.add('recording');
+        } catch(e) {
+          console.error("Mic error:", e);
+        }
+      } else {
+        alert(currentLang === 'ur' ? "آپ کا براؤزر وائس سپورٹ نہیں کرتا۔" : "Your browser does not support speech recognition.");
+      }
+    }
+
+    function stopVoiceRecognition() {
+      if (recognition && isListening) {
+        try { recognition.stop(); } catch(e) {}
+      }
+      isListening = false;
+      const micBtn = document.getElementById('btn-mic');
+      if (micBtn) {
+        micBtn.classList.remove('recording');
+      }
+    }
+
+    // Improved TTS configuration for native dialects
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = currentLang === 'ur' ? 'ur-PK' : 'en-US';
+        utterance.rate = 0.9; // Slightly slower for clear regional pronunciation
+        
+        // Attempt to find a specific regional voice if available in the OS
+        const voices = window.speechSynthesis.getVoices();
+        const targetVoice = voices.find(v => v.lang === utterance.lang);
+        if (targetVoice) utterance.voice = targetVoice;
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function readDiagnosis() {
+      const summary = document.getElementById('diagnosis-summary').innerText;
+      const precautions = Array.from(document.querySelectorAll('#precautions-list li')).map(li => li.innerText).join('. ');
+      speakText(`${summary}. ${precautions}`);
+    }
+
+    // Load voices actively (fixes Chrome bug where voices aren't immediately ready)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
     // --- Module 1: Care Plan ---
     async function generatePlan() {
       const loader = document.getElementById('plan-loader');
@@ -254,7 +342,10 @@
         
         timeline.innerHTML = stages.map(s => `
           <div class="stage">
-            <h4>${s.title}</h4>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h4>${s.title}</h4>
+              <button onclick="speakText('${s.title.replace(/'/g, "\\'")}. ${s.desc.replace(/'/g, "\\'")}')" style="font-size: 11px; cursor: pointer; background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px;">🔊 Listen</button>
+            </div>
             <p style="font-size: 14px; color: #555;">${s.desc}</p>
           </div>
         `).join('');
@@ -318,7 +409,6 @@
 
       const window = document.getElementById('chat-window');
       
-      // User message
       window.innerHTML += `<div class="msg user">${text}</div>`;
       input.value = "";
       window.scrollTop = window.scrollHeight;
@@ -331,6 +421,7 @@
         });
         const data = await res.json();
         window.innerHTML += `<div class="msg bot">${data.reply}</div>`;
+        speakText(data.reply);
       } catch (err) {
         window.innerHTML += `<div class="msg bot">Error: Could not connect to assistant.</div>`;
       }
@@ -339,4 +430,3 @@
   </script>
 </body>
 </html>
-
