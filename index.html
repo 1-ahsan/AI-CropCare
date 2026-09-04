@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI CropCare - Personal AI Agronomist</title>
+  <style>
+    :root {
+      --primary: #1b5e20;
+      --accent: #c0ca33;
+      --bg: #f1f8e9;
+      --card: #ffffff;
+      --text: #1b5e20;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    /* Header */
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .logo h1 { font-size: 28px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .header-actions { display: flex; align-items: center; gap: 15px; }
+    .btn-toggle { background: var(--primary); color: white; border: none; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold; }
+    .weather-badge { background: #fff; padding: 8px 15px; border-radius: 50px; font-size: 14px; box-shadow: var(--shadow); border-left: 4px solid var(--accent); }
+
+    .card { background: var(--card); border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: var(--shadow); }
+    h3 { margin-bottom: 20px; font-size: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; color: var(--primary); }
+
+    /* Module 1: Form */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 13px; font-weight: 600; }
+    select, input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 14px; }
+    select:focus, input:focus { border-color: var(--primary); }
+    .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 15px; transition: 0.3s; }
+    .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+    /* Timeline */
+    .timeline { margin-top: 20px; display: none; }
+    .stage { border-left: 3px solid var(--accent); padding-left: 20px; margin-bottom: 20px; position: relative; }
+    .stage::before { content: ''; position: absolute; left: -8px; top: 0; width: 13px; height: 13px; background: var(--accent); border-radius: 50%; }
+    .stage h4 { color: var(--primary); margin-bottom: 5px; }
+
+    /* Module 2: Doctor */
+    #preview-container { text-align: center; margin: 15px 0; display: none; }
+    #image-preview { max-width: 100%; max-height: 300px; border-radius: 12px; border: 2px solid #eee; }
+    .severity { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
+    .severity-moderate { background: #fff3e0; color: #ef6c00; }
+    .severity-high { background: #ffebee; color: #c62828; }
+
+    /* Module 3: Chat */
+    #chat-window { height: 250px; overflow-y: auto; background: #fafafa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; }
+    .msg { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; }
+    .msg.bot { background: #e8f5e9; align-self: flex-start; border-bottom-left-radius: 2px; }
+    .msg.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+    .loader { display: none; text-align: center; padding: 10px; font-style: italic; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container" id="main-container">
+    <header>
+      <div class="logo">
+        <h1 id="txt-title">🌱 AI CropCare</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-toggle" onclick="toggleLanguage()">اردو / English</button>
+        <div class="weather-badge">
+          📍 <strong id="txt-city">Faisalabad</strong> | 🌤️ 28°C | <span id="txt-hum">Humidity: 45%</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Module 1: Personalized Care Plan -->
+    <div class="card">
+      <h3 id="txt-mod1-title">📅 Smart Farming Care Plan</h3>
+      <div class="grid">
+        <div class="field">
+          <label id="lbl-crop">Crop</label>
+          <select id="crop">
+            <option value="Strawberry">Strawberry / اسٹرابیری</option>
+            <option value="Broccoli">Broccoli / بروکولی</option>
+            <option value="Dragon Fruit">Dragon Fruit / ڈریگن فروٹ</option>
+            <option value="Blueberry">Blueberry / بلیو بیری</option>
+          </select>
+        </div>
+        <div class="field">
+          <label id="lbl-loc">Location</label>
+          <input type="text" id="location" value="Punjab, Pakistan">
+        </div>
+        <div class="field">
+          <label id="lbl-soil">Soil Type</label>
+          <select id="soil">
+            <option value="Loamy">Loamy / میرا مٹی</option>
+            <option value="Clay">Clay / چکنی مٹی</option>
+            <option value="Sandy">Sandy / ریتلی مٹی</option>
+          </select>
+        </div>
+        <div class="field">
+          <label id="lbl-irr">Irrigation</label>
+          <select id="irrigation">
+            <option value="Drip">Drip / ڈرپ</option>
+            <option value="Flood">Flood / سیلابی</option>
+            <option value="Sprinkler">Sprinkler / فوارہ</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label id="lbl-date">Planting Date</label>
+          <input type="date" id="plant-date" value="2024-10-25">
+        </div>
+      </div>
+      <button class="btn" id="btn-plan" onclick="generatePlan()">Generate AI Care Plan</button>
+      <div id="plan-loader" class="loader">Consulting AI Agronomist...</div>
+      <div id="timeline" class="timeline"></div>
+    </div>
+
+    <!-- Module 2: AI Crop Doctor -->
+    <div class="card">
+      <h3 id="txt-mod2-title">🩺 AI Crop Doctor (Diagnostic Scanner)</h3>
+      <p id="txt-mod2-desc" style="font-size: 13px; color: #666; margin-bottom: 15px;">Upload a photo of your leaf or plant to detect diseases.</p>
+      <input type="file" id="image-upload" accept="image/*" onchange="previewImage(event)">
+      <div id="preview-container">
+        <img id="image-preview" src="">
+      </div>
+      <button class="btn" id="btn-diag" onclick="diagnoseCrop()">Analyze Health</button>
+      <div id="diag-loader" class="loader">Analyzing image markers...</div>
+      
+      <div id="diagnosis-results" style="display: none; margin-top: 20px;">
+        <div id="severity-badge" class="severity severity-moderate">Moderate Severity</div>
+        <div id="diagnosis-summary" style="margin-bottom: 15px; font-size: 14px; line-height: 1.6;"></div>
+        <ul id="precautions-list" style="padding-left: 20px; font-size: 14px;"></ul>
+      </div>
+    </div>
+
+    <!-- Module 3: Multilingual Assistant -->
+    <div class="card">
+      <h3 id="txt-mod3-title">💬 Farmer Chat Assistant</h3>
+      <p id="txt-mod3-desc" style="font-size: 13px; color: #666; margin-bottom: 10px;">Ask in Urdu, Punjabi, or English (e.g., "Kapas ki bimari?")</p>
+      <div id="chat-window">
+        <div class="msg bot" id="chat-welcome">Assalam-o-Alaikum! I am your AI Agronomist. How can I help you?</div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="chat-input" placeholder="Type message..." style="flex: 1;">
+        <button class="btn" id="btn-chat" style="width: 80px; margin: 0;" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:3000/api";
+    let currentLang = 'en';
+
+    const translations = {
+      en: {
+        title: "🌱 AI CropCare",
+        city: "Faisalabad",
+        hum: "Humidity: 45%",
+        mod1: "📅 Smart Farming Care Plan",
+        crop: "Crop",
+        loc: "Location",
+        soil: "Soil Type",
+        irr: "Irrigation",
+        date: "Planting Date",
+        btnPlan: "Generate AI Care Plan",
+        loadPlan: "Consulting AI Agronomist...",
+        mod2: "🩺 AI Crop Doctor (Diagnostic Scanner)",
+        mod2Desc: "Upload a photo of your leaf or plant to detect diseases.",
+        btnDiag: "Analyze Health",
+        loadDiag: "Analyzing image markers...",
+        mod3: "💬 Farmer Chat Assistant",
+        mod3Desc: "Ask in Urdu, Punjabi, or English (e.g., \"Kapas ki bimari?\")",
+        welcome: "Assalam-o-Alaikum! I am your AI Agronomist. How can I help you?",
+        btnChat: "Send",
+        chatPlaceholder: "Type message..."
+      },
+      ur: {
+        title: "🌱 اے آئی کراپ کیئر",
+        city: "فیصل آباد",
+        hum: "نمی: 45%",
+        mod1: "📅 سمارٹ کاشتکاری پلان",
+        crop: "فصل",
+        loc: "علاقہ",
+        soil: "مٹی کی قسم",
+        irr: "آبپاشی کا طریقہ",
+        date: "کاشت کی تاریخ",
+        btnPlan: "اے آئی پلان تیار کریں",
+        loadPlan: "زرعی ماہر سے مشورہ کیا جا رہا ہے...",
+        mod2: "🩺 اے آئی کراپ ڈاکٹر (تشخیصی سکینر)",
+        mod2Desc: "بیماریوں کی تشخیص کے لیے اپنے پودے یا پتے کی تصویر اپ لوڈ کریں۔",
+        btnDiag: "صحت کا معائنہ کریں",
+        loadDiag: "تصویر کا جائزہ لیا جا رہا ہے...",
+        mod3: "💬 کسان چیٹ اسسٹنٹ",
+        mod3Desc: "اردو، پنجابی یا انگریزی میں پوچھیں (مثلاً \"کپاس کی بیماری؟\")",
+        welcome: "اسلام علیکم! میں آپ کا اے آئی ماہر زراعت ہوں۔ میں آپ کی کیا مدد کر سکتا ہوں؟",
+        btnChat: "بھیجیں",
+        chatPlaceholder: "پیغام لکھیں..."
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'ur' : 'en';
+      const t = translations[currentLang];
+      const container = document.getElementById('main-container');
+      
+      container.style.direction = currentLang === 'ur' ? 'rtl' : 'ltr';
+      
+      document.getElementById('txt-title').innerText = t.title;
+      document.getElementById('txt-city').innerText = t.city;
+      document.getElementById('txt-hum').innerText = t.hum;
+      document.getElementById('txt-mod1-title').innerText = t.mod1;
+      document.getElementById('lbl-crop').innerText = t.crop;
+      document.getElementById('lbl-loc').innerText = t.loc;
+      document.getElementById('lbl-soil').innerText = t.soil;
+      document.getElementById('lbl-irr').innerText = t.irr;
+      document.getElementById('lbl-date').innerText = t.date;
+      document.getElementById('btn-plan').innerText = t.btnPlan;
+      document.getElementById('plan-loader').innerText = t.loadPlan;
+      document.getElementById('txt-mod2-title').innerText = t.mod2;
+      document.getElementById('txt-mod2-desc').innerText = t.mod2Desc;
+      document.getElementById('btn-diag').innerText = t.btnDiag;
+      document.getElementById('diag-loader').innerText = t.loadDiag;
+      document.getElementById('txt-mod3-title').innerText = t.mod3;
+      document.getElementById('txt-mod3-desc').innerText = t.mod3Desc;
+      document.getElementById('chat-welcome').innerText = t.welcome;
+      document.getElementById('btn-chat').innerText = t.btnChat;
+      document.getElementById('chat-input').placeholder = t.chatPlaceholder;
+    }
+
+    // --- Module 1: Care Plan ---
+    async function generatePlan() {
+      const loader = document.getElementById('plan-loader');
+      const timeline = document.getElementById('timeline');
+      
+      loader.style.display = 'block';
+      timeline.style.display = 'none';
+
+      const payload = {
+        crop: document.getElementById('crop').value,
+        location: document.getElementById('location').value,
+        soil: document.getElementById('soil').value,
+        irrigation: document.getElementById('irrigation').value,
+        date: document.getElementById('plant-date').value,
+        lang: currentLang
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/care-plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const stages = await res.json();
+        
+        timeline.innerHTML = stages.map(s => `
+          <div class="stage">
+            <h4>${s.title}</h4>
+            <p style="font-size: 14px; color: #555;">${s.desc}</p>
+          </div>
+        `).join('');
+        
+        timeline.style.display = 'block';
+      } catch (err) {
+        alert(currentLang === 'ur' ? "پلان لوڈ کرنے میں خرابی۔" : "Error loading plan.");
+      } finally {
+        loader.style.display = 'none';
+      }
+    }
+
+    // --- Module 2: Crop Doctor ---
+    let base64Image = "";
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('image-preview').src = e.target.result;
+        document.getElementById('preview-container').style.display = 'block';
+        base64Image = e.target.result.split(',')[1];
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function diagnoseCrop() {
+      if (!base64Image) return alert(currentLang === 'ur' ? "تصویر منتخب کریں!" : "Select an image!");
+      
+      const loader = document.getElementById('diag-loader');
+      const results = document.getElementById('diagnosis-results');
+      loader.style.display = 'block';
+      results.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/diagnose`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image, lang: currentLang })
+        });
+        const data = await res.json();
+        
+        document.getElementById('diagnosis-summary').innerText = data.summary;
+        document.getElementById('severity-badge').innerText = data.severity;
+        document.getElementById('severity-badge').className = `severity severity-${data.severity.toLowerCase()}`;
+        document.getElementById('precautions-list').innerHTML = data.precautions.map(p => `<li>${p}</li>`).join('');
+        
+        results.style.display = 'block';
+      } catch (err) {
+        alert(currentLang === 'ur' ? "تشخیص میں ناکامی۔" : "Diagnosis failed.");
+      } finally {
+        loader.style.display = 'none';
+      }
+    }
+
+    // --- Module 3: Chat ---
+    async function sendChat() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const window = document.getElementById('chat-window');
+      
+      // User message
+      window.innerHTML += `<div class="msg user">${text}</div>`;
+      input.value = "";
+      window.scrollTop = window.scrollHeight;
+
+      try {
+        const res = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        window.innerHTML += `<div class="msg bot">${data.reply}</div>`;
+      } catch (err) {
+        window.innerHTML += `<div class="msg bot">Error: Could not connect to assistant.</div>`;
+      }
+      window.scrollTop = window.scrollHeight;
+    }
+  </script>
+</body>
+</html>
+
