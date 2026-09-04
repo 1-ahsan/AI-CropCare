@@ -6,6 +6,8 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+const path = require('path');
+app.use(express.static(__dirname));
 
 // --- Configuration & AI Initialization ---
 const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
